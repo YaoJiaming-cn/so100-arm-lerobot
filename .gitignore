@@ -1,0 +1,13 @@
+# Large downloaded content
+zihao-reference/feishu-wiki-pages/
+
+# Cloned repos
+lerobot/
+
+# IDE
+.idea/
+__pycache__/
+
+# Test artifacts
+camera-test/snapshot.jpg
+camera-test/_test_imshow.py
