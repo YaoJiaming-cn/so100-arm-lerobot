@@ -1,13 +1,17 @@
 # Large downloaded content
 zihao-reference/feishu-wiki-pages/
+zihao-reference/link.txt
 
 # Cloned repos
 lerobot/
+
+# Third-party tools
+tools/FD1985-250729/
 
 # IDE
 .idea/
 __pycache__/
 
 # Test artifacts
-camera-test/snapshot.jpg
-camera-test/_test_imshow.py
+tests/camera/snapshot.jpg
+tests/camera/_test_imshow.py
