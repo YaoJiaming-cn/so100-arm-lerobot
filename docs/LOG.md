@@ -1,5 +1,13 @@
 # 复现日志
 
+## 2026-07-26
+- 通过 `/init` 创建 CLAUDE.md：项目骨架、环境搭建命令、CLI 命令表、Leader→FK→EE→IK→Follower 数据管道架构、硬件舵机映射
+- 创建 `.claude/settings.json`：配置 Stop hook，每次对话结束自动提醒检查 LOG.md / reproduction-plan.md / troubleshooting.md 是否需要更新
+- 更新 reproduction-plan.md：环境搭建标记为完成（ffmpeg 7.1.1、lerobot 导入成功、CUDA 可用）
+- 术语表新增：CLI、FK（正运动学）、IK（逆运动学）、URDF
+- 研读 `lerobot/examples/so100_to_so100_EE/teleoperate.py`：理解 20 行核心循环和 FK→IK 管线
+- 学到：CLAUDE.md 与 .claude/settings.json 的分工（说明书 vs 自动化规则）、hooks 机制（Stop/PreToolUse 等触发时机）、项目级 vs 用户级配置的覆盖关系、SO-100 与 SO-101 共享代码但机械结构有差异、examples vs src 的分工（使用示范 vs 库源码）
+
 ## 2026-07-25
 - 海康威视 USB 摄像头测试通过（OpenCV 拍照 + 实时预览 + Windows 相机应用）
 - 飞书知识库「同济子豪兄」78 个页面全部导出为本地 Markdown（含图片，共 1.1GB）

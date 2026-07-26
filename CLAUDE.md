@@ -1,0 +1,143 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project overview
+
+Reproduction project for training and running LingBot-VLA (Vision-Language-Action model) on the SO-ARM101 robotic arm. Combines HuggingFace LeRobot (the core robotics library, included as a git submodule) with LingBot-VLA model weights. The pipeline: assemble arm → calibrate servos → teleoperate to record demo data → fine-tune VLA model → real-robot inference.
+
+## Git submodule
+
+`lerobot/` is a git submodule pointing to `https://github.com/Seeed-Projects/lerobot` (a fork of HuggingFace le Robot v0.4.4). After cloning:
+
+```bash
+git submodule update --init --recursive
+```
+
+DO NOT commit changes inside `lerobot/` — edits there are tracked in the submodule repo, not this one.
+
+## Environment setup
+
+```bash
+conda create -y -n lerobot python=3.10
+conda activate lerobot
+conda install ffmpeg=7.1.1 -c conda-forge -y
+cd lerobot
+pip install -e ".[feetech]"
+```
+
+Verify: `python -c "import lerobot; import scservo_sdk; import torch; print(torch.cuda.is_available())"`
+
+If `torch.cuda.is_available()` returns `False`, install PyTorch with CUDA explicitly:
+```bash
+pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+```
+
+On Windows, replace `opencv-python-headless` with full OpenCV (headless lacks `imshow`):
+```bash
+conda install -n lerobot -c conda-forge opencv
+```
+
+## CLI commands (all provided by the lerobot submodule)
+
+| Command | Purpose |
+|---|---|
+| `lerobot-calibrate` | Calibrate robot/teleoperator servo zero positions |
+| `lerobot-find-cameras` | Detect available USB/RealSense cameras |
+| `lerobot-find-port` | Find serial port for servo control board |
+| `lerobot-setup-motors` | Configure motor parameters (ID, baud rate) |
+| `lerobot-teleoperate` | Teleoperate follower arm with leader arm |
+| `lerobot-record` | Teleoperate + record episodes to a dataset |
+| `lerobot-replay` | Replay a recorded dataset on the robot |
+| `lerobot-train` | Train a policy model |
+| `lerobot-eval` | Evaluate a trained policy |
+| `lerobot-dataset-viz` | Visualize a dataset with rerun |
+| `lerobot-find-joint-limits` | Find joint angle limits |
+
+## Architecture — data pipeline
+
+The core data flow for SO-100 teleoperation (key example: `lerobot/examples/so100_to_so100_EE/`):
+
+```
+Leader arm (black, held by human)
+    ↓ read joint angles (servos as sensors, gears removed)
+Forward Kinematics (FK)
+    ↓ joint angles → end-effector pose (x, y, z, rx, ry, rz)
+Inverse Kinematics (IK)
+    ↓ EE pose → target joint angles for follower arm
+Follower arm (white, executes task)
+    ↓ full-torque servos, all C047 1:345 ratio, 12V
+```
+
+**Servo mapping** — 6 joints per arm, IDs 1–6:
+1. Shoulder Pan (base rotation)
+2. Shoulder Lift (shoulder up/down, highest load)
+3. Elbow Flex (elbow bend)
+4. Wrist Flex (wrist up/down)
+5. Wrist Roll (wrist rotation along its axis)
+6. Gripper (handle on leader, actual gripper on follower)
+
+Leader arms use mixed servo models (C044/C001/C046) with lower reduction ratios and 7.4V, since the human provides the force. Follower uses C047 servos with 1:345 ratio at 12V for maximum torque.
+
+**Serial bus protocol**: All 12 servos share one TTL half-duplex signal line. Each servo has a unique ID stored in EEPROM. Communication is baud rate 1,000,000 (1 Mbps).
+
+## Key source code layout (inside lerobot/ submodule)
+
+```
+lerobot/src/lerobot/
+  robots/          — Robot implementations (so_follower, bi_so_follower, etc.)
+  teleoperators/   — Teleoperation devices (so_leader, gamepad, phone, etc.)
+  motors/          — Motor bus drivers (feetech, dynamixel, damiao)
+  cameras/         — Camera drivers (opencv, realsense, zmq)
+  policies/        — ML policies (act, diffusion, pi0, smolvla, groot, etc.)
+  datasets/        — LeRobotDataset format (Parquet + video via AV codec)
+  scripts/         — CLI entry points (lerobot_*.py)
+  configs/         — Draccus-based configuration dataclasses
+  processor/       — Robot processor pipelines (FK, IK, bounds checking)
+  model/           — Kinematics solver (placo + pin)
+
+lerobot/examples/
+  so100_to_so100_EE/  — Teleop, record, replay, evaluate for SO-100 leader→follower
+  phone_to_so100/     — Phone-based teleoperation for SO-100
+  training/           — Training pipeline examples (train_policy.py)
+  tutorial/           — Tutorials for ACT, Diffusion, Pi0, SmolVLA
+```
+
+## Project structure (this repo, outside submodule)
+
+```
+docs/
+  servo-mapping.md    — Servo models, reduction ratios, joint-to-ID mapping for both arms
+  glossary.md         — Robotics/electronics terminology reference (servos, TTL, EEPROM, etc.)
+  troubleshooting.md  — Bugs encountered and their solutions
+  LOG.md              — Work log: what was done, when, and outcome
+tests/camera/         — Camera detection and preview scripts
+tools/                — Feetech FD servo debugger (Windows GUI)
+zihao-reference/      — Exported Feishu wiki tutorial pages (78 markdown files)
+reproduction-plan.md  — Step-by-step reproduction plan with current progress and TODO
+```
+
+## Understanding project state
+
+At the start of each new conversation, read these files to pick up context:
+
+1. `reproduction-plan.md` — what's done, what's next (the "current progress" table)
+2. `docs/LOG.md` — recent work log entries
+3. `docs/troubleshooting.md` — bugs hit so far and their fixes
+
+These files are updated regularly as the project progresses. CLAUDE.md only changes when the project's *structure* shifts (new dependencies, new CLI tools, hardware changes, directory reorganization).
+
+## Configuration
+
+LeRobot uses **Draccus** (YAML-based dataclass configuration). All `lerobot-*` commands accept `--key=value` overrides on the CLI. See `lerobot/src/lerobot/configs/` for the config dataclass definitions.
+
+## Tests
+
+Limited to camera detection/tests in `tests/camera/`. The lerobot submodule has end-to-end tests runnable via `make test-end-to-end` inside `lerobot/`, but these require a full environment and simulation setup.
+
+## Important notes
+
+- `torchcodec` is not available on Windows — this is noted in pyproject.toml with a platform guard. Video encoding/decoding may be limited on Windows.
+- The servo control board appears as a COM port on Windows (e.g., `COM3`). Use `lerobot-find-port` to detect it.
+- Servo EEPROM stores ID, baud rate, and homing offset persistently. The `lerobot-calibrate` command writes to EEPROM — changes survive power cycles.
+- Camera indices for OpenCV start at 0. Use `lerobot-find-cameras` before teleop/record to get the correct index.
