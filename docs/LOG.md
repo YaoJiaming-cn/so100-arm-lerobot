@@ -1,5 +1,17 @@
 # 复现日志
 
+## 2026-07-28
+- 螺丝刀到货，从动臂组装完成，FD 调试工具逐个关节测试通过
+- 两臂 LeRobot 标定完成，标定文件存入项目 `calibration/` 目录
+- 设置环境变量 `HF_LEROBOT_CALIBRATION` 指向项目文件夹，避免标定文件散落在 C 盘
+- 遥操作测试通过：49Hz 实时性，精度高、延迟低
+- 创建 `docs/commands.md` 命令速查卡片，后续录数据/训练/推理命令逐步补充
+- 记录串口号：COM9（主动臂）、COM10（从动臂）到 `docs/servo-mapping.md`
+- 摄像头检测：海康威视 + 笔记本自带摄像头共 2 个，索引 0 和 1
+- 遇到 TTL 通信偶发抖动（4 号舵机 Incorrect status packet），重跑一次即恢复正常
+- USB 口不够（两臂×2 + 鼠标 + 键盘 + 摄像头 = 5 个口），扩展坞只有 4 个口，已下单第二个扩展坞
+- 学到：标定的两个步骤（归零偏移量 + 运动范围），wrist_roll 因可无限旋转被跳过，标定数据同时写入舵机 EEPROM 和 JSON 文件，FK/IK 全在 CPU 计算（控制板只做 USB→TTL 电平转换），TTL 半双工由协议层决定但软件循环快到体感无延迟，SO-ARM 系列谱系（TheRobotStudio × HuggingFace 原创 → Seeed Studio 生产 → 社区传播），TTL 偶发通信错误可通过重试解决
+
 ## 2026-07-26
 - 通过 `/init` 创建 CLAUDE.md：项目骨架、环境搭建命令、CLI 命令表、Leader→FK→EE→IK→Follower 数据管道架构、硬件舵机映射
 - 创建 `.claude/settings.json`：配置 Stop hook，每次对话结束自动提醒检查 LOG.md / reproduction-plan.md / troubleshooting.md 是否需要更新

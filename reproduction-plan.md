@@ -99,27 +99,17 @@
 | 环境搭建 | ✅ 已完成 | conda 环境、pip install -e ".[feetech]"、ffmpeg、CUDA 可用 |
 | 舵机中位校准 | ✅ 已完成 | 12 个舵机全部校准至 ~2048 中位 |
 | 主动臂组装 | ✅ 已完成 | FD 调试工具逐个关节测试通过 |
-| 从动臂组装 | ⏳ 待做 | 等电动螺丝刀到货 |
-| 摄像头 | ✅ 已测试 | OpenCV 拍照 + 实时预览通过 |
-| LeRobot 标定 | 待做 | 需两臂都装好 |
-| 遥操作 | 待做 | |
+| 从动臂组装 | ✅ 已完成 | FD 调试工具逐个关节测试通过 |
+| 摄像头 | ✅ 已测试 | OpenCV 拍照 + 实时预览、lerobot-find-cameras 均通过；USB 口不够，等扩展坞到货才能同时接摄像头+两臂 |
+| LeRobot 标定 | ✅ 已完成 | 标定文件存项目 calibration/ 目录 |
+| 遥操作 | ✅ 已测试 | 49Hz，精度高、延迟低；带摄像头画面待扩展坞到货后测试 |
 | 采集数据集 | 待做 | |
 | 训练模型 | 待做 | |
 | 真机推理 | 待做 | |
 
-## 待办清单（等螺丝刀期间可做）
+## 待办清单
 
-### 1. 安装 LeRobot Python 环境
-```bash
-conda create -y -n lerobot python=3.10
-conda activate lerobot
-conda install ffmpeg=7.1.1 -c conda-forge -y
-cd lerobot
-pip install -e ".[feetech]"
-```
-验证：`python -c "import lerobot; import scservo_sdk; print('OK')"`
-
-### 2. 研读核心代码，理解数据流
+### 1. 研读核心代码，理解数据流
 关键文件（按推荐阅读顺序）：
 - `lerobot/examples/so100_to_so100_EE/teleoperate.py` — Leader → FK → EE → IK → Follower 完整数据链
 - `lerobot/examples/so100_to_so100_EE/record.py` — 遥操作 + 录制数据集
@@ -132,5 +122,3 @@ pip install -e ".[feetech]"
 - **URDF**：机器人几何模型文件（杆长、关节类型、坐标系变换）
 - **末端执行器 (EE)**：机械臂末端（这里是夹爪）
 
-### 4. 尝试跑单臂标定（可选）
-仅主动臂连上，先跑一遍 `lerobot-calibrate` 熟悉流程

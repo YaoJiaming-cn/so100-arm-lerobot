@@ -49,3 +49,24 @@ lerobot 依赖了 `opencv-python-headless`，它缺少 GUI 功能。替换为完
 ```shell
 conda install -n lerobot -c conda-forge opencv
 ```
+
+## TTL 通信偶发错误：Incorrect status packet
+
+**现象：**
+```
+ConnectionError: Failed to write 'Torque_Enable' on id_=4 with '1' after 1 tries.
+[TxRxResult] Incorrect status packet!
+```
+
+**原因：**
+TTL 半双工总线偶发通信丢包，舵机返回的数据校验不通过。
+
+**解决方法：**
+重跑一次命令即可。如果连续多次报同一个舵机 ID，检查该舵机的接线是否松动。
+
+## USB 口不够
+
+两臂 USB 线 ×2 + 摄像头 ×1 + 鼠标 + 键盘 = 至少 5 个 USB 口。普通笔记本 + 一个 4 口扩展坞可能不够。
+
+**解决方法：**
+多加一个扩展坞，或者用 USB Hub 集中接键鼠。注意机械臂的 USB 线建议直连电脑或供电充足的扩展坞，避免 USB 供电不足导致通信不稳定。
