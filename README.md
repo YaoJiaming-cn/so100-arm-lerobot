@@ -1,6 +1,6 @@
 # SO-ARM101 + LeRobot + LingBot-VLA 复现项目
 
-基于 SO-ARM101 开源机械臂、HuggingFace LeRobot 框架和 LingBot-VLA 视觉-语言-动作模型的端到端复现项目。目标是从硬件组装、遥操作示教、模型后训练微调到真机推理，打通具身智能的全流程。
+低成本开源机械臂的 VLA 模型微调与真机部署。基于 SO-ARM101 开源机械臂、HuggingFace LeRobot 框架和 LingBot-VLA 视觉-语言-动作模型的端到端复现项目。目标是从硬件组装、遥操作示教、模型后训练微调到真机推理，打通具身智能的全流程。
 
 ## 参考资源
 
