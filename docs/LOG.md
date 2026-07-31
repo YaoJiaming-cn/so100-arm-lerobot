@@ -8,7 +8,15 @@
 - 海康威视摄像头一度指示灯不亮，排查后确认是之前遥操作占用导致，摄像头本身正常
 - 创建 README.md 项目主页
 - 更新 `docs/servo-mapping.md`：补充摄像头索引表、USB 布局
-- 学到：`lerobot-find-cameras` 扫描时索引超出范围会报 ERROR（正常现象），摄像头 fps 参数需与硬件实际支持的帧率匹配否则拒绝启动，rerun.io 的 Vulkan 渲染警告不影响使用
+- **双摄像头遥操作调试**：多轮硬件布局测试，最终找到可用配置
+  - 海康威视俯拍摄像头限制：最低 640×480，不支持 MJPG，不支持 320×240
+  - 两个摄像头必须分到不同扩展坞，否则 Windows MSMF 驱动无法同时拉两路 640×480 流
+  - 俯拍摄像头不能和主动臂数据线共用扩展坞（否则掉帧）
+  - 最终可用布局：USB-A 扩展坞（从动臂 COM10 + 腕部摄像头 + 键盘），Type-C 扩展坞（主动臂 COM9 + 俯拍摄像头 + 移动硬盘）
+  - 640×480 双摄像头下有一点点卡，但可接受
+- **HuggingFace 配置**：创建 Write token，`huggingface-cli login` 登录成功，用户名 yaojiaming
+- **录制命令就绪**：适配为双摄像头 + COM9/COM10 + 自动上传的 `lerobot-record` 命令写入 `docs/commands.md`，数据集 `yaojiaming/so100_pick_place`
+- 学到：MSMF（Microsoft Media Foundation）是 Windows 底层视频采集框架，OpenCV 在 Windows 上通过它读写摄像头；双摄像头同时拉流时 MSMF 驱动可能扛不住；USB 拓扑对多摄像头场景至关重要；`huggingface-cli login` 已 deprecated，新命令是 `hf auth login`；Token 暴露后 HF 会自动扫描失效
 
 ## 2026-07-28
 - 螺丝刀到货，从动臂组装完成，FD 调试工具逐个关节测试通过
