@@ -103,7 +103,35 @@ lerobot-record \
 
 ## 训练
 
-（待补充）
+```bash
+# ACT 算法训练（推荐入门，~80M 参数，RTX 3060 6GB 可跑）
+lerobot-train \
+    --dataset.repo_id=yaojiaming/so100_pick_place \
+    --dataset.root=~/.cache/huggingface/lerobot/yaojiaming/so100_pick_place \
+    --dataset.revision=v0.1.0 \
+    --dataset.streaming=false \
+    --policy.type=act \
+    --output_dir=outputs/train/pick_place_act \
+    --job_name=pick_place_act_v1 \
+    --policy.device=cuda \
+    --wandb.enable=false \
+    --policy.push_to_hub=false \
+    --steps=20000 \
+    --batch_size=4
+```
+
+参数说明：
+- `dataset.repo_id`：数据集名称，与录制时一致
+- `dataset.root`：数据集本地路径，录完数据后确认实际路径
+- `dataset.revision`：数据集版本，上传 HF 时指定
+- `dataset.streaming=false`：数据集在本地，无需流式读取
+- `policy.type`：`act`（Action Chunking Transformer），最推荐入门
+- `output_dir`：训练产物保存目录
+- `job_name`：任务名，区分不同训练实验
+- `policy.device=cuda`：使用 GPU 训练
+- `batch_size=4`：RTX 3060 6GB 显存保守设置，如果没 OOM 可调到 8
+- `steps=20000`：简单抓取任务 2 万步足够
+- `wandb.enable=false`：先不启用 wandb 可视化，需要的话装 `pip install wandb` 后改为 true
 
 ## 真机推理
 
