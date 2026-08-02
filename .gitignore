@@ -12,6 +12,12 @@ tools/FD1985-250729/
 .idea/
 __pycache__/
 
+# Recorded datasets (large, stored on HF)
+datasets/
+
+# Training outputs (model weights, logs)
+outputs/
+
 # Test artifacts
 tests/camera/snapshot.jpg
 tests/camera/_test_imshow.py

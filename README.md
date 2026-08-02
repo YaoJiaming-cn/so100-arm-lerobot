@@ -35,6 +35,8 @@ pip install -e ".[feetech]"
 ```
 ├── lerobot/              # LeRobot 子模块（矽递 fork v0.4.4）
 ├── calibration/          # 机械臂标定文件
+├── datasets/             # 录制的数据集（本地备份）
+├── outputs/              # 训练产物（模型权重、日志）
 ├── docs/
 │   ├── commands.md       # 命令速查卡片
 │   ├── servo-mapping.md  # 舵机对照表 + 串口号
@@ -58,8 +60,8 @@ pip install -e ".[feetech]"
 | 摄像头 | ✅ 已测试 |
 | LeRobot 标定 | ✅ 已完成 |
 | 遥操作 | ✅ 已测试 |
-| 采集数据集 | ⏳ 待做 |
-| 训练模型 | 待做 |
+| 采集数据集 | ✅ 已完成 | [yaojiaming/so100_pick_place](https://huggingface.co/datasets/yaojiaming/so100_pick_place)（50 条，374MB） |
+| 训练模型 | ⏳ 命令就绪 |
 | 真机推理 | 待做 |
 
 ## 硬件配置

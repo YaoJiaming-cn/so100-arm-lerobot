@@ -2,7 +2,13 @@
   "hooks": {
     "Stop": [
       {
-        "prompt": "Before ending this conversation, review what was accomplished in this session. Check if any of the following need updating and tell the user specifically what you recommend changing (with exact file paths and suggested text):\n\n1. `docs/LOG.md` — new work done? New decisions made? New milestones reached?\n2. `reproduction-plan.md` — progress table needs updating? Todo list changed?\n3. `docs/troubleshooting.md` — any new bugs encountered and solved?\n\nDo NOT update the files automatically. Present your recommendations clearly and ask the user whether to apply them. Keep each recommendation concise (1-2 sentences). If nothing needs updating, say so briefly."
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '== REMINDER == Before closing, review whether docs/LOG.md, reproduction-plan.md, or docs/troubleshooting.md need updating.'"
+          }
+        ]
       }
     ]
   }
