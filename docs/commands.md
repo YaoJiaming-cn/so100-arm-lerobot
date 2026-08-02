@@ -125,6 +125,7 @@ lerobot-train `
   --output_dir=outputs/train/pick_place_act `
   --job_name=pick_place_act_v1 `
   --policy.device=cuda `
+  --policy.push_to_hub=false `
   --batch_size=4 `
   --steps=20000
 ```
@@ -139,7 +140,35 @@ lerobot-train `
 
 ### 4. 真机推理
 
-（待补充）
+```powershell
+python scripts/inference.py
+```
+
+推理前确认：
+- 从动臂 COM10 已插电（12V 电源）
+- 两个摄像头均已连接（腕部=索引1，俯拍=索引2）
+- 机械臂周围无障碍物，夹爪初始位置张开放好
+- 机械臂前方放好要抓取的物体
+
+**脚本做了什么：**
+1. 加载训练好的 ACT 模型权重
+2. 连接从动臂和双摄像头
+3. 模型根据摄像头画面实时预测动作
+4. 从动臂自主执行抓取（**不需要人操作主动臂**）
+5. 每条推理 30 秒，共 5 条
+6. 推理过程的视频和数据自动保存为评估数据集
+
+**按键：**
+- **ESC**：停止推理
+- **→** 右箭头：提前结束当前条
+- **←** 左箭头：重新推理本条
+
+| 参数 | 含义 |
+|------|------|
+| `NUM_EPISODES=5` | 推理条数 |
+| `EPISODE_TIME_SEC=30` | 每条最多 30 秒 |
+| `MODEL_PATH` | 模型权重路径 |
+| `EVAL_DATASET_REPO_ID` | 评估数据集保存位置 |
 
 ---
 

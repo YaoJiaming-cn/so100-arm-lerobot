@@ -181,3 +181,18 @@ rm -r -Force D:\projects\so100-arm-lerobot\datasets\so100_pick_place
 ```
 
 注意：如果已经部分上传到 HF，删除本地数据不影响 HF 上的内容。重跑后重新上传即可覆盖。
+
+## 训练结束时 Checkpoint 符号链接失败（WinError 1314）
+
+**现象：**
+```
+OSError: [WinError 1314] 客户端没有所需的特权。: '020000' -> 'outputs\\train\\pick_place_act\\checkpoints\\last'
+```
+
+**原因：**
+Windows 默认禁止普通用户创建符号链接（symlink）。`lerobot-train` 训练结束后自动创建 `checkpoints/last -> 020000` 快捷方式时失败。
+
+**解决方法（三选一）：**
+1. 以管理员身份打开 PowerShell 再跑训练
+2. Windows 设置 → 隐私和安全性 → 开发者选项 → 开启**开发者模式**（一次设置永久生效）
+3. 不管它——模型权重已完整保存在 `checkpoints/020000/pretrained_model/`，推理时直接指定完整路径即可

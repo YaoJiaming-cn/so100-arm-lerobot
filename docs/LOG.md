@@ -1,14 +1,13 @@
 # 复现日志
 
 ## 2026-08-03
-- **采集数据集 50 条完成**：`yaojiaming/so100_pick_place`，Pick and place 任务，双摄像头 640×480@30fps，每条 20 秒，间隔 10 秒
-- 数据集上传至 HuggingFace：https://huggingface.co/datasets/yaojiaming/so100_pick_place（374MB，含 100 个 MP4 视频 + Parquet 数据）
-- 自动上传（`--dataset.push_to_hub=true`）卡住，改用 `huggingface-cli upload --repo-type=dataset` 手动上传成功
-- LFS 大文件上传到 67% 时卡住（单个 MP4 100-200MB），重跑上传命令可断点续传（已上传的文件自动跳过）
-- 数据集从 C 盘移到 D 盘项目目录 `datasets/so100_pick_place/`
-- **训练命令准备完成**：ACT 算法，batch_size=4（RTX 3060 6GB），20000 步，预计 1-2 小时
-- 更新 `docs/commands.md`：录制命令分试跑/正式两步，新增训练命令、手动上传命令、参数说明表
-- 学到：Windows ProcessPoolExecutor 在 `save_episode()` 视频编码阶段 spawn 子进程时会 crash（import torchvision 失败），不要按 Ctrl+C，耐心等主进程恢复；HuggingFace LFS 上传大文件容易超时，建议用小步迭代方式上传（先录 5 条测试 → 再录 50 条正式）；`huggingface-cli login` 已废弃，用 `hf auth login` 代替
+- **训练完成**：ACT 算法，20K 步，~1h34m，loss 7.165 → 0.27（下降 96%），模型 197MB
+  - 保存路径：`outputs/train/pick_place_act/checkpoints/020000/pretrained_model/model.safetensors`
+  - 训练日志：`outputs/train/pick_place_act/training.log`
+  - Windows 符号链接创建失败（WinError 1314），不影响模型权重，需管理员权限或开启开发者模式
+- 更新 `docs/commands.md`：训练命令补充 `--policy.push_to_hub=false`
+- 术语表新增：模仿学习、Epoch、数据增强、数据集划分
+- 学到：LeRobot 训练不区分 epoch，按 step 计；loss 收敛到 0.3 以下即可做真机推理；真机推理没有现成 CLI，需基于 `evaluate.py` 示例脚本定制
 
 ## 2026-07-31
 - 第二个扩展坞到货，USB 布局确定：Type-C 扩展坞接两臂+移动硬盘，USB 扩展坞接两个摄像头+键盘

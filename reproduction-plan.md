@@ -105,8 +105,8 @@
 | 遥操作 | ✅ 已测试 | 双摄像头 640×480 通过，略有卡顿但可接受 |
 | HuggingFace 配置 | ✅ 已完成 | yaojiaming，Write token 已登录，录制后自动上传 |
 | 采集数据集 | ✅ 已完成 | 50 条 Pick and place，双摄像头 640×480@30fps，已上传 HF |
-| 训练模型 | ⏳ 命令就绪 | ACT 算法，batch_size=4，20000 步，预计 1-2 小时 |
-| 真机推理 | 待做 | |
+| 训练模型 | ✅ 已完成 | ACT 算法，loss 7.17→0.27，模型 197MB，保存于 `outputs/train/pick_place_act/` |
+| 真机推理 | ⏳ 待做 | 需创建推理脚本 + 下载 URDF 文件 |
 
 ## 待办清单
 
