@@ -62,7 +62,7 @@ pip install -e ".[feetech]"
 | 遥操作 | ✅ 已测试 |
 | 采集数据集 | ✅ 已完成 | [yaojiaming/so100_pick_place](https://huggingface.co/datasets/yaojiaming/so100_pick_place)（50 条，374MB） |
 | 训练模型 | ✅ 已完成 | ACT, 20K 步, loss 0.27, 197MB |
-| 真机推理 | ⏳ 待做 |
+| 真机推理 | 🔧 调试中 | 脚本已跑通，机械臂可运动但未完成任务，下次换物体+重录 |
 
 ## 硬件配置
 

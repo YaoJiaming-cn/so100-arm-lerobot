@@ -182,6 +182,30 @@ rm -r -Force D:\projects\so100-arm-lerobot\datasets\so100_pick_place
 
 注意：如果已经部分上传到 HF，删除本地数据不影响 HF 上的内容。重跑后重新上传即可覆盖。
 
+## 真机推理：机械臂动一下就卡住
+
+**现象：**
+```
+模型已加载，开始真机推理...
+机械臂微微动了一下，然后完全不动，舵机仍然通电锁死
+```
+
+**原因：**
+`policy.select_action()` 返回的是 z-score 归一化后的值（量级 ~0.01），脚本直接把 0.01 当作角度发给舵机。机械臂收到的指令是"转到 0.01 度"，跟当前位置几乎一样，所以只动一点点就停了。
+
+需要从 `policy_postprocessor_step_0_unnormalizer_processor.safetensors` 加载 `action.mean` 和 `action.std`，做反归一化：
+```python
+action_raw = action_normalized * action_std + action_mean
+```
+
+同时输入也要做归一化（模型训练时用的是归一化后的数据）：
+```python
+state_norm = (state_raw - state_mean) / state_std
+image_norm = (image/255 - image_mean) / image_std
+```
+
+完整实现见 `scripts/inference.py`。
+
 ## 训练结束时 Checkpoint 符号链接失败（WinError 1314）
 
 **现象：**

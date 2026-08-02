@@ -9,6 +9,21 @@
 - 术语表新增：模仿学习、Epoch、数据增强、数据集划分
 - 学到：LeRobot 训练不区分 epoch，按 step 计；loss 收敛到 0.3 以下即可做真机推理；真机推理没有现成 CLI，需基于 `evaluate.py` 示例脚本定制
 
+- **真机推理调试**：创建 `scripts/inference.py`，多轮迭代修复
+  - **第 1 版**：尝试复用官方 `evaluate.py` → 失败，官方脚本需要 placo（C++ FK/IK 库），Windows 上装不了
+  - 确认本项目训练数据存储的是**关节角度**（非 EE 空间坐标），无需 FK/IK/URDF，直接输出关节角度即可
+  - **第 2 版**：去除 placo 依赖，纯关节空间推理 → 机械臂"动一下就卡住"
+  - **根因**：`policy.select_action()` 返回归一化值（z-score ~0.01 量级），脚本直接把 0.01 当角度发给舵机
+  - **第 3 版（当前）**：从 `policy_postprocessor_step_0_unnormalizer_processor.safetensors` 加载 mean/std，添加：
+    1. 输入归一化：`(state_raw - mean) / std` + `(img/255 - mean) / std`
+    2. 输出反归一化：`action_raw = action_normalized * std + mean`
+    3. 动作裁剪：clamp 到 `[min, max]` 训练数据范围
+  - 修复后机械臂开始运动，但 5 条均未完成任务（抓旺仔牛奶糖）
+  - **第 4 版（当前）**：添加 CSV 日志 + 定期截图保存到 `outputs/eval/<timestamp>/`
+  - 可能原因：物体太小、示教质量不够（每条前后闲置时间长）、训练数据只有 50 条/2 万步
+  - 下次改进：换大物体、录 8-10 秒/条用 → 键提前结束、4-5 万步训练
+  - 学到：LeRobot 的 MEAN_STD 归一化在 safetensors 中；ACT 的 `select_action()` 内部维护 100 步 action queue；推理时必须手动做输入归一化 + 输出反归一化；ACT `temporal_ensemble_coeff` 默认为 None（用 queue 而非时间平滑）
+
 ## 2026-07-31
 - 第二个扩展坞到货，USB 布局确定：Type-C 扩展坞接两臂+移动硬盘，USB 扩展坞接两个摄像头+键盘
 - 摄像头索引确认：0=笔记本自带，1=腕部，2=海康威视俯拍
