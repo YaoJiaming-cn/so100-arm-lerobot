@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """真机推理：加载训练好的 ACT 模型，控制 SO-ARM101 从动臂自主执行 Pick and place。
+使用 LeRobot 官方 processor 管道处理归一化/反归一化，不手写数据处理逻辑。
 每次推理自动保存 CSV 日志 + 定期截图到 outputs/eval/<timestamp>/ 目录。"""
 
 import csv
-import os
 import time
 from datetime import datetime
 from pathlib import Path
@@ -11,9 +11,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-from safetensors import safe_open
+
 from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
 from lerobot.policies.act.modeling_act import ACTPolicy
+from lerobot.processor.pipeline import PolicyProcessorPipeline
 from lerobot.robots.so_follower import SO100Follower, SO100FollowerConfig
 from lerobot.utils.utils import log_say
 
@@ -25,8 +26,8 @@ ROBOT_PORT = "COM10"
 ROBOT_ID = "my_follower_arm"
 CAMERA_WRIST_INDEX = 1
 CAMERA_OVERHEAD_INDEX = 2
-MODEL_PATH = "outputs/train/pick_place_act/checkpoints/020000/pretrained_model"
-SAVE_FRAME_INTERVAL = 30  # 每 30 帧（1秒）保存一张截图
+MODEL_PATH = "outputs/train/pick_place_act_v2/checkpoints/040000/pretrained_model"
+SAVE_FRAME_INTERVAL = 30
 
 JOINT_NAMES = [
     "shoulder_pan.pos",
@@ -39,24 +40,26 @@ JOINT_NAMES = [
 SHORT_NAMES = ["pan", "lift", "elbow", "w_flex", "w_roll", "grip"]
 
 
-def load_norm_stats(model_path, device="cpu"):
-    """从 safetensors 加载归一化统计量。"""
-    stats_path = model_path + "/policy_postprocessor_step_0_unnormalizer_processor.safetensors"
-    stats = {}
-    with safe_open(stats_path, framework="pt") as sf:
-        for key in [
-            "action.mean", "action.std", "action.min", "action.max",
-            "observation.state.mean", "observation.state.std",
-            "observation.images.wrist.mean", "observation.images.wrist.std",
-            "observation.images.overhead.mean", "observation.images.overhead.std",
-        ]:
-            if key in sf.keys():
-                stats[key] = sf.get_tensor(key).to(device)
-    return stats
+def robot_obs_to_policy_input(obs):
+    """将 robot.get_observation() 返回的原始 numpy 数据转为 preprocessor 期望的 tensor 格式。
+    - state: (6,) float32 → (1, 6) float32 tensor
+    - images: uint8 HWC → float32 BCHW [0,1] tensor
+    """
+    state = torch.from_numpy(
+        np.array([obs[name] for name in JOINT_NAMES], dtype=np.float32)
+    ).unsqueeze(0)
+
+    def img_to_tensor(img):
+        return torch.from_numpy(img).float().permute(2, 0, 1).unsqueeze(0) / 255.0
+
+    return {
+        "observation.state": state,
+        "observation.images.wrist": img_to_tensor(obs["wrist"]),
+        "observation.images.overhead": img_to_tensor(obs["overhead"]),
+    }
 
 
 def main():
-    # 创建输出目录
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     eval_dir = Path(f"outputs/eval/{timestamp}")
     eval_dir.mkdir(parents=True, exist_ok=True)
@@ -66,16 +69,12 @@ def main():
     policy = ACTPolicy.from_pretrained(MODEL_PATH)
     policy.reset()
     policy.eval()
-    device = policy.config.device
-    print(f"模型已加载，设备: {device}")
+    print(f"模型已加载，设备: {policy.config.device}")
 
-    # 加载归一化统计量
-    norm = load_norm_stats(MODEL_PATH, device)
-    print("归一化统计量已加载")
-    # 打印各关节统计信息
-    for i, name in enumerate(SHORT_NAMES):
-        print(f"  {name}: mean={norm['action.mean'][i]:.1f}, std={norm['action.std'][i]:.1f}, "
-              f"range=[{norm['action.min'][i]:.1f}, {norm['action.max'][i]:.1f}]")
+    # 加载官方 preprocessor / postprocessor 管道
+    preprocessor = PolicyProcessorPipeline.from_pretrained(MODEL_PATH, "policy_preprocessor.json")
+    postprocessor = PolicyProcessorPipeline.from_pretrained(MODEL_PATH, "policy_postprocessor.json")
+    print("官方 processor 管道已加载")
 
     # 摄像头
     camera_config = {
@@ -86,8 +85,6 @@ def main():
     # 从动臂
     robot_config = SO100FollowerConfig(port=ROBOT_PORT, id=ROBOT_ID, cameras=camera_config, use_degrees=True)
     robot = SO100Follower(robot_config)
-
-    # 连接机械臂
     robot.connect()
     if not robot.is_connected:
         raise RuntimeError("机械臂连接失败！检查 COM10 是否插电")
@@ -99,7 +96,6 @@ def main():
         log_say(f"推理第 {ep + 1}/{NUM_EPISODES} 条")
         policy.reset()
 
-        # 为本条创建 CSV 日志
         csv_path = eval_dir / f"episode_{ep:02d}.csv"
         csv_file = open(csv_path, "w", newline="")
         csv_writer = csv.writer(csv_file)
@@ -117,44 +113,25 @@ def main():
 
                 loop_start = time.time()
 
-                # 1. 采集观测
+                # 1. 采集原始观测
                 obs = robot.get_observation()
-
-                # 保存原始状态用于日志
                 state_raw = np.array([obs[name] for name in JOINT_NAMES], dtype=np.float32)
 
-                # 2. 组装模型输入（归一化）
-                state = torch.tensor(state_raw, dtype=torch.float32, device=device)
-                state_norm = (state - norm["observation.state.mean"]) / norm["observation.state.std"]
-
-                # 图像: HWC uint8 → CHW float32 [0,1] → 归一化
-                wrist_img = torch.from_numpy(obs["wrist"]).float().to(device) / 255.0
-                wrist_img = wrist_img.permute(2, 0, 1)
-                wrist_img = (wrist_img - norm["observation.images.wrist.mean"]) / norm["observation.images.wrist.std"]
-
-                overhead_img = torch.from_numpy(obs["overhead"]).float().to(device) / 255.0
-                overhead_img = overhead_img.permute(2, 0, 1)
-                overhead_img = (overhead_img - norm["observation.images.overhead.mean"]) / norm["observation.images.overhead.std"]
-
-                batch = {
-                    "observation.state": state_norm.unsqueeze(0),
-                    "observation.images.wrist": wrist_img.unsqueeze(0),
-                    "observation.images.overhead": overhead_img.unsqueeze(0),
-                }
+                # 2. 转为 tensor 格式 → 官方 preprocessor（归一化 + 转 device）
+                policy_input = robot_obs_to_policy_input(obs)
+                batch = preprocessor(policy_input)
 
                 # 3. 模型推理
                 with torch.no_grad():
                     action_tensor = policy.select_action(batch)
 
-                # 4. 反归一化 + 裁剪 + 发送动作
-                action_values = action_tensor.squeeze(0)
-                action_values = action_values * norm["action.std"] + norm["action.mean"]
-                action_values = torch.clamp(action_values, norm["action.min"], norm["action.max"])
-                action_np = action_values.cpu().numpy()
-                action_dict = {name: float(action_np[i]) for i, name in enumerate(JOINT_NAMES)}
-                robot.send_action(action_dict)
+                # 4. 官方 postprocessor 反归一化（期望 dict 格式输入）
+                action_dict = postprocessor({"action": action_tensor})
+                action_np = action_dict["action"].squeeze(0).cpu().numpy()
+                action_robot = {name: float(action_np[i]) for i, name in enumerate(JOINT_NAMES)}
+                robot.send_action(action_robot)
 
-                # 5. 记录 CSV 日志
+                # 5. 记录 CSV
                 csv_writer.writerow(
                     [frame_count, f"{elapsed:.3f}"]
                     + [f"{state_raw[i]:.2f}" for i in range(6)]
@@ -170,7 +147,6 @@ def main():
 
                 frame_count += 1
 
-                # 7. 控制帧率
                 elapsed_step = time.time() - loop_start
                 sleep_time = (1.0 / FPS) - elapsed_step
                 if sleep_time > 0:
@@ -184,7 +160,6 @@ def main():
         csv_file.close()
         log_say(f"第 {ep + 1} 条完成 ({frame_count} 帧), CSV → {csv_path}")
 
-        # 条间复位
         if ep < NUM_EPISODES - 1:
             print("请将机械臂移回起始位置（10 秒）...")
             time.sleep(10)

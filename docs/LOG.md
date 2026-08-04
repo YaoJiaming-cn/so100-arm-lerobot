@@ -1,5 +1,25 @@
 # 复现日志
 
+## 2026-08-04
+- **V2 数据集录制完成**：66 条 Pick and place（红色积木块），双摄像头 640×480@30fps，26934 帧
+  - 录制中反复崩溃（`ValueError: add_frame before add_episode`），是 LeRobot 内部 bug，与 ← 键（取消当前条）相关
+  - `--resume=true` 续录：崩溃不丢数据，断点续录；但 resume 有 bug 导致超出 num_episodes（设定 60 条实际录了 66 条）
+  - 数据集：`datasets/so100_pick_place_v2/`（从 HF 缓存拷贝），已上传 HF `yaojiaming/so100_pick_place_v2`
+- **V2 训练**：ACT，batch_size=4，分三段
+  - 0→20K: loss 7.43→0.17，符号链接崩溃
+  - 20K→30K: `--resume=true`（需 `--config_path`），loss 0.17→0.13
+  - 30K→40K: loss 0.13→0.11，仍在缓慢下降
+  - 40K loss 0.11 换算真实 L1 误差: lift ~6°, pan ~2°，仍未达到实用精度
+- **推理脚本重构**：改用 LeRobot 官方 `PolicyProcessorPipeline` 处理归一化/反归一化，不再手写
+  - 调试：`from_pretrained` 需要 `config_filename` 参数；postprocessor 需要 dict 包装；image 需先转 float32 tensor 再喂 pipeline
+  - 路径更新至 40K checkpoint
+- **数据深度分析**：
+  - 训练数据中 10% 的 lift 动作在 -100°（最小值），模型被训练数据的极端分布影响
+  - 推理时初始位姿超出训练数据范围（lift=-104° vs 训练 min=-99.8°），导致 OOD 预测
+  - 归一化 L1 loss 0.11 换算真实角度仍有数度误差，66 条数据量可能不够
+  - ACT n_action_steps=100 意味着每 3.3s 才重新查询一次模型，开环控制时间长
+- **WSL 评估**：用户考虑装双系统解决推理代码问题，分析 WSL vs 双系统的硬件兼容性（USB/串口/摄像头需 usbipd）
+
 ## 2026-08-03
 - **训练完成**：ACT 算法，20K 步，~1h34m，loss 7.165 → 0.27（下降 96%），模型 197MB
   - 保存路径：`outputs/train/pick_place_act/checkpoints/020000/pretrained_model/model.safetensors`
