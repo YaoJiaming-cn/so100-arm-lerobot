@@ -76,10 +76,7 @@ pip install -e ".[feetech]"
 
 ## 演示视频
 
-> 待上传 Bilibili 后填入链接
-
-- 遥操作录制：待补充
-- 真机推理：待补充
+- [Lerobot + SO-ARM101 + ACT 复现全流程](https://www.bilibili.com/video/BV1oRbe6eEkv/)（Bilibili）
 
 ## 硬件配置
 
