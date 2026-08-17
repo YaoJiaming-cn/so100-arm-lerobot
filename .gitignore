@@ -21,3 +21,6 @@ outputs/
 # Test artifacts
 tests/camera/snapshot.jpg
 tests/camera/_test_imshow.py
+
+# Demo / record videos (host on Bilibili, link in README)
+video/

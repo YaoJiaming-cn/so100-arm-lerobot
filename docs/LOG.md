@@ -1,5 +1,15 @@
 # 复现日志
 
+## 2026-08-17
+- **阶段性结项**：复现闭环全部跑通（环境搭建 → 组装标定 → 遥操作录制 → 训练 → 真机推理）
+- **重新测试结论**：前两天把红色物块摆到合适初始位姿后，基本能稳定完成 Pick-and-place
+  - 之前"抖动 + 抓不到"的根因确认为 ACT 模型的 OOD 局限（初始位姿超出训练分布），而非训练或推理代码问题
+  - 推理脚本已改用官方 processor 管道，数据处理与训练一致，代码本身无误
+- **项目收尾**：完善 README / reproduction-plan 文档，结项
+  - 演示视频：`video/` 加入 .gitignore，上传 Bilibili 后在 README 放链接
+  - 模型权重：建议推 HF 模型仓库 `yaojiaming/so100_pick_place_act_v2`
+- **下一步方向**：换 VLA 模型（SmolVLA）、租云 GPU、扩充数据、装双系统跑官方 lerobot-eval
+
 ## 2026-08-04
 - **V2 数据集录制完成**：66 条 Pick and place（红色积木块），双摄像头 640×480@30fps，26934 帧
   - 录制中反复崩溃（`ValueError: add_frame before add_episode`），是 LeRobot 内部 bug，与 ← 键（取消当前条）相关

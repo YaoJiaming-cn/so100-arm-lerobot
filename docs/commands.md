@@ -215,6 +215,20 @@ lerobot-train `
 | `dataset.streaming=false` | 数据集在本地，无需流式读取 |
 | `output_dir` | 训练产物（模型权重）保存目录 |
 
+### 3.5 上传模型权重到 HF（结项后）
+
+训练完把 checkpoint 的 `pretrained_model/` 推到 HF **模型仓库**（不是 dataset 仓库），别人可 `ACTPolicy.from_pretrained()` 直接加载：
+
+```powershell
+# 1. 先在浏览器 hf.co/new 创建一个 model 类型仓库 yaojiaming/so100_pick_place_act_v2
+
+# 2. 上传 40K checkpoint 的 pretrained_model（开代理）
+huggingface-cli upload yaojiaming/so100_pick_place_act_v2 `
+  outputs/train/pick_place_act_v2/checkpoints/040000/pretrained_model .
+```
+
+> 也可以训练时直接 `--policy.push_to_hub=true --policy.repo_id=yaojiaming/so100_pick_place_act_v2` 自动上传（本次用了 false 手动上传）
+
 ### 4. 真机推理
 
 #### V2（当前，红色积木块，40K 步 / loss 0.11）

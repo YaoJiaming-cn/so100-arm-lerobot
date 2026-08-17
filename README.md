@@ -60,9 +60,26 @@ pip install -e ".[feetech]"
 | 摄像头 | ✅ 已测试 |
 | LeRobot 标定 | ✅ 已完成 |
 | 遥操作 | ✅ 已测试 |
-| 采集数据集 | ✅ 已完成 | [yaojiaming/so100_pick_place](https://huggingface.co/datasets/yaojiaming/so100_pick_place)（50 条，374MB） |
-| 训练模型 | ✅ 已完成 | ACT, 20K 步, loss 0.27, 197MB |
-| 真机推理 | 🔧 调试中 | 脚本已跑通，机械臂可运动但未完成任务，下次换物体+重录 |
+| 采集数据集 | ✅ 已完成 | [yaojiaming/so100_pick_place_v2](https://huggingface.co/datasets/yaojiaming/so100_pick_place_v2)（66 条，双摄像头 640×480@30fps，26934 帧） |
+| 训练模型 | ✅ 已完成 | ACT, 40K 步, loss 0.11, 206MB |
+| 真机推理 | ✅ 已完成 | 闭环跑通，物块置于合适初始位姿可稳定完成 Pick-and-place |
+
+## 阶段性结论
+
+已打通「环境搭建 → 组装标定 → 遥操作录制 → 训练 → 真机推理」完整闭环。真机推理效果依赖物块初始位姿落在训练分布内——置于合适位姿可稳定完成 Pick-and-place；初始位姿超出训练范围（OOD）时会出现抖动/抓取失败，这是 ACT 小模型 + 66 条数据的固有局限，而非训练或推理代码问题。
+
+## 下一步方向
+
+- 换更强的 VLA 模型（如 SmolVLA，支持语言指令、泛化更强）
+- 租云 GPU 训练（本机 RTX 3060 6GB 显存有限）
+- 扩充示教数据、覆盖更多场景与初始位姿
+
+## 演示视频
+
+> 待上传 Bilibili 后填入链接
+
+- 遥操作录制：待补充
+- 真机推理：待补充
 
 ## 硬件配置
 

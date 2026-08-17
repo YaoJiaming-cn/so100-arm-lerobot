@@ -104,22 +104,18 @@
 | LeRobot 标定 | ✅ 已完成 | 标定文件存项目 calibration/ 目录 |
 | 遥操作 | ✅ 已测试 | 双摄像头 640×480 通过，略有卡顿但可接受 |
 | HuggingFace 配置 | ✅ 已完成 | yaojiaming，Write token 已登录，录制后自动上传 |
-| 采集数据集 | ✅ 已完成 | 50 条 Pick and place，双摄像头 640×480@30fps，已上传 HF |
-| 训练模型 | ✅ 已完成 | ACT 算法，loss 7.17→0.27，模型 197MB，保存于 `outputs/train/pick_place_act/` |
-| 真机推理 | 🔧 调试中 | 脚本已跑通，机械臂可运动但未完成任务，下次换物体+重录 |
+| 采集数据集 | ✅ 已完成 | V2 共 66 条 Pick and place，双摄像头 640×480@30fps，26934 帧，已上传 HF |
+| 训练模型 | ✅ 已完成 | ACT 算法，40K 步，loss 7.43→0.11，模型 206MB，保存于 `outputs/train/pick_place_act_v2/` |
+| 真机推理 | ✅ 已完成 | 闭环跑通，物块置于合适初始位姿可稳定完成 Pick-and-place |
 
-## 待办清单
+## 阶段性结论
 
-### 1. 研读核心代码，理解数据流
-关键文件（按推荐阅读顺序）：
-- `lerobot/examples/so100_to_so100_EE/teleoperate.py` — Leader → FK → EE → IK → Follower 完整数据链
-- `lerobot/examples/so100_to_so100_EE/record.py` — 遥操作 + 录制数据集
-- `lerobot/examples/training/train_policy.py` — 训练 Diffusion Policy 的完整流程
-- `lerobot/src/lerobot/policies/` — 各种策略实现（ACT、Diffusion、Pi0 等）
+已打通「环境搭建 → 组装标定 → 遥操作录制 → 训练 → 真机推理」完整闭环。真机推理效果依赖物块初始位姿落在训练分布内——置于合适位姿可稳定完成 Pick-and-place；初始位姿超出训练范围（OOD）时会出现抖动/抓取失败，这是 ACT 小模型 + 66 条数据的固有局限，而非训练或推理代码问题。
 
-### 3. 预习关键概念
-- **正运动学 (FK)**：6 个关节角度 → 末端夹爪在空间中的位置
-- **逆运动学 (IK)**：末端目标位置 → 6 个关节角度（多解，需要选最优）
-- **URDF**：机器人几何模型文件（杆长、关节类型、坐标系变换）
-- **末端执行器 (EE)**：机械臂末端（这里是夹爪）
+## 后续方向
+
+- **换更强模型**：SmolVLA 等 VLA 模型，支持语言指令、泛化更强（需云 GPU）
+- **云 GPU 训练**：本机 RTX 3060 6GB 显存有限，可租云 GPU 跑更大模型
+- **扩充数据**：更多示教条数、覆盖更多场景与初始位姿，提升 OOD 鲁棒性
+- **双系统 Linux**：装双系统以运行官方 `lerobot-eval`（Windows 上 placo FK/IK 库装不了）
 
