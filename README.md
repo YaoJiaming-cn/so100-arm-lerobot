@@ -9,6 +9,7 @@
 | LingBot-VLA 技术报告 | [arxiv.org/pdf/2601.18692](https://arxiv.org/pdf/2601.18692) |
 | LingBot-VLA 开源代码 | [github.com/Robbyant/lingbot-vla](https://github.com/Robbyant/lingbot-vla) |
 | 模型权重（魔搭） | [modelscope.cn/collections/Robbyant/LingBot-VLA](https://www.modelscope.cn/collections/Robbyant/LingBot-VLA) |
+| 本项目训练模型权重 | [huggingface.co/yaojiaming/so100_pick_place_act_v2](https://huggingface.co/yaojiaming/so100_pick_place_act_v2) |
 | LeRobot（矽递 fork） | [github.com/Seeed-Projects/lerobot](https://github.com/Seeed-Projects/lerobot) |
 | 同济子豪兄知识库 | [zihao-ai.feishu.cn](https://zihao-ai.feishu.cn/wiki/space/7589642043471924447) |
 
@@ -61,7 +62,7 @@ pip install -e ".[feetech]"
 | LeRobot 标定 | ✅ 已完成 |
 | 遥操作 | ✅ 已测试 |
 | 采集数据集 | ✅ 已完成 | [yaojiaming/so100_pick_place_v2](https://huggingface.co/datasets/yaojiaming/so100_pick_place_v2)（66 条，双摄像头 640×480@30fps，26934 帧） |
-| 训练模型 | ✅ 已完成 | ACT, 40K 步, loss 0.11, 206MB |
+| 训练模型 | ✅ 已完成 | ACT, 40K 步, loss 0.11, 206MB → [HF 模型仓库](https://huggingface.co/yaojiaming/so100_pick_place_act_v2) |
 | 真机推理 | ✅ 已完成 | 闭环跑通，物块置于合适初始位姿可稳定完成 Pick-and-place |
 
 ## 阶段性结论
